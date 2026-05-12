@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="author" content="Palani Munusamy"/>
+<title>ClickHouse — Executive Briefing</title>
+<style>
+:root {
+  --bg: #0A0A0A;
+  --card: #12141C;
+  --card-alt: #0D0F15;
+  --elev: #1A1D2E;
+  --indigo-500: #6366F1;
+  --indigo-400: #818CF8;
+  --indigo-300: #A5B4FC;
+  --indigo-700: #4338CA;
+  --indigo-900: #312E81;
+  --purple-300: #D8B4FE;
+  --pink-300: #F9A8D4;
+  --teal: #00D4AA;
+  --blue: #3B82F6;
+  --orange: #F97316;
+  --cyan: #06B6D4;
+  --green: #22C55E;
+  --pink: #EC4899;
+  --success: #34D399;
+  --error: #F87171;
+  --warning: #FBBF24;
+  --text: #FFFFFF;
+  --slate-200: #E2E8F0;
+  --slate-300: #CBD5E1;
+  --slate-400: #94A3B8;
+  --slate-500: #64748B;
+  --border: #1F2937;
+  --code: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--slate-200);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;}
+body{padding-bottom:4rem;}
+a{color:var(--indigo-300);text-decoration:none;}
+a:hover{color:var(--indigo-400);text-decoration:underline;}
+code{font-family:var(--code);background:var(--elev);padding:.1em .35em;border-radius:.25em;font-size:.9em;color:var(--indigo-300);}
+hr{border:none;height:1px;background:linear-gradient(to right,transparent,var(--indigo-700),transparent);margin:3rem 0;}
+
+.wrap{max-width:1100px;margin:0 auto;padding:0 1.5rem;}
+
+/* ---------- HERO ---------- */
+.hero{padding:5rem 0 4rem;position:relative;overflow:hidden;}
+.hero::before{content:"";position:absolute;top:-30%;right:-10%;width:35rem;height:35rem;background:radial-gradient(closest-side,rgba(67,56,202,.35),transparent 70%);pointer-events:none;}
+.hero::after{content:"";position:absolute;bottom:-30%;left:-15%;width:30rem;height:30rem;background:radial-gradient(closest-side,rgba(49,46,129,.4),transparent 70%);pointer-events:none;}
+.hero .inner{position:relative;z-index:1;}
+.author-line{font-size:.78rem;font-weight:700;letter-spacing:.4em;color:var(--indigo-400);text-transform:uppercase;}
+.kicker{display:inline-flex;align-items:center;gap:.6rem;margin-top:2rem;font-size:.78rem;font-weight:700;letter-spacing:.25em;text-transform:uppercase;color:var(--teal);}
+.kicker::before{content:"";display:inline-block;width:3px;height:1rem;background:currentColor;}
+.hero h1{font-size:4rem;font-weight:800;line-height:1.05;margin:1.25rem 0 1.25rem;letter-spacing:-.02em;
+  background:linear-gradient(to right,var(--indigo-300),var(--purple-300),var(--pink-300));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.hero h1.smaller{font-size:3rem;}
+.hero p.lede{font-size:1.25rem;color:var(--slate-300);max-width:50rem;margin:0 0 2.25rem;}
+.audience-pills{display:flex;flex-wrap:wrap;gap:.6rem;}
+.pill{padding:.4rem .9rem;border-radius:6px;font-size:.7rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;}
+.pill.blue{color:var(--blue);background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.3);}
+.pill.cyan{color:var(--cyan);background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.3);}
+.pill.indigo{color:var(--indigo-400);background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.3);}
+.pill.green{color:var(--green);background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);}
+.pill.pink{color:var(--pink);background:rgba(236,72,153,.08);border:1px solid rgba(236,72,153,.3);}
+.pill.orange{color:var(--orange);background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.3);}
+.pill.teal{color:var(--teal);background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.3);}
+
+/* ---------- SECTION ---------- */
+.section{padding:3.5rem 0;}
+.section + .section{border-top:1px solid var(--border);}
+.section h2{font-size:2.25rem;font-weight:700;margin:0 0 .25rem;color:var(--text);letter-spacing:-.01em;}
+.section h2 .num{color:var(--indigo-400);margin-right:.6rem;font-weight:800;}
+.section .tag{font-size:.7rem;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:var(--indigo-400);margin-bottom:.6rem;}
+.section .tag::before{content:"";display:inline-block;width:3px;height:.9rem;background:currentColor;margin-right:.6rem;vertical-align:middle;}
+.section .tag.detect{color:var(--cyan);}
+.section .tag.diagnose{color:var(--indigo-400);}
+.section .tag.act{color:var(--green);}
+.section .tag.improve{color:var(--pink);}
+.section .tag.prevent{color:var(--orange);}
+.section .tag.found{color:var(--blue);}
+.section .tag.teal{color:var(--teal);}
+.section-rule{width:60px;height:3px;background:var(--indigo-500);margin:1.25rem 0 1.75rem;border-radius:2px;}
+.section .lede{font-size:1.05rem;color:var(--slate-300);max-width:60rem;margin:0 0 1.5rem;}
+
+/* ---------- CARDS ---------- */
+.cards{display:grid;gap:1rem;margin-top:1rem;}
+.cards.cols-2{grid-template-columns:repeat(2,1fr);}
+.cards.cols-3{grid-template-columns:repeat(3,1fr);}
+.cards.cols-4{grid-template-columns:repeat(4,1fr);}
+@media(max-width:780px){.cards.cols-2,.cards.cols-3,.cards.cols-4{grid-template-columns:1fr;}}
+.card{background:var(--card);border:1px solid rgba(99,102,241,.15);border-radius:10px;padding:1.25rem 1.4rem;position:relative;overflow:hidden;}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent,var(--indigo-500));}
+.card .ctag{font-size:.7rem;font-weight:700;letter-spacing:.25em;text-transform:uppercase;color:var(--accent,var(--indigo-400));margin-bottom:.5rem;}
+.card h3{margin:.25rem 0 .55rem;font-size:1.1rem;font-weight:700;color:var(--text);}
+.card .num{font-size:1.5rem;font-weight:800;color:var(--accent,var(--indigo-400));margin-bottom:.25rem;display:inline-block;}
+.card p{margin:0;color:var(--slate-300);font-size:.95rem;line-height:1.55;}
+.card ul{margin:.4rem 0 0;padding-left:1.1rem;color:var(--slate-200);}
+.card ul li{margin:.3rem 0;font-size:.95rem;}
+.card.tag-blue{--accent:var(--blue);}
+.card.tag-cyan{--accent:var(--cyan);}
+.card.tag-indigo{--accent:var(--indigo-500);}
+.card.tag-green{--accent:var(--green);}
+.card.tag-pink{--accent:var(--pink);}
+.card.tag-orange{--accent:var(--orange);}
+.card.tag-success{--accent:var(--success);}
+.card.tag-error{--accent:var(--error);}
+.card.tag-warning{--accent:var(--warning);}
+.card.tag-teal{--accent:var(--teal);}
+
+.stat-card{padding:1.5rem;}
+.stat-card .big{font-size:2.25rem;font-weight:800;color:var(--accent,var(--indigo-400));line-height:1.1;}
+.stat-card .lbl{font-size:.95rem;color:var(--slate-300);margin-top:.5rem;}
+
+.callout{margin:1.5rem 0;padding:1rem 1.25rem;background:var(--elev);border-left:3px solid var(--accent,var(--teal));border-radius:6px;}
+.callout strong{color:var(--accent,var(--teal));letter-spacing:.15em;}
+.callout.success{--accent:var(--success);}
+.callout.warning{--accent:var(--warning);}
+.callout.indigo{--accent:var(--indigo-400);}
+.callout.teal{--accent:var(--teal);}
+
+/* ---------- TABLES ---------- */
+.matrix{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.92rem;}
+.matrix th,.matrix td{padding:.65rem .8rem;border:1px solid var(--border);text-align:left;vertical-align:middle;}
+.matrix th{background:var(--elev);color:var(--indigo-300);font-weight:700;letter-spacing:.04em;font-size:.85rem;}
+.matrix td{background:var(--card);color:var(--slate-200);}
+.matrix td.name{color:var(--indigo-400);font-weight:700;}
+.matrix td.center{text-align:center;}
+.matrix .good{color:var(--success);font-weight:600;}
+.matrix .bad{color:var(--error);font-weight:600;}
+.matrix .meh{color:var(--warning);font-weight:600;}
+.legend{display:flex;gap:1.25rem;font-size:.85rem;color:var(--slate-400);margin-top:.5rem;flex-wrap:wrap;}
+.legend .swatch{display:inline-block;width:.85rem;height:.85rem;margin-right:.4rem;border-radius:3px;vertical-align:middle;}
+.legend .good{background:var(--success);}
+.legend .meh{background:var(--warning);}
+.legend .bad{background:var(--error);}
+
+/* ---------- BULLETS ---------- */
+.bullet-list{list-style:none;padding:0;margin:0;}
+.bullet-list li{padding-left:1.4rem;position:relative;color:var(--slate-200);margin:.45rem 0;font-size:.95rem;line-height:1.5;}
+.bullet-list li::before{content:"";position:absolute;left:0;top:.55em;width:.6rem;height:.6rem;background:var(--accent,var(--indigo-400));}
+
+/* ---------- DIAGRAMS ---------- */
+.diagram{background:var(--card);border:1px solid rgba(99,102,241,.15);border-radius:10px;padding:1.5rem;margin:1rem 0;overflow-x:auto;}
+.diagram svg{display:block;max-width:100%;height:auto;}
+
+/* ---------- FOOTER ---------- */
+.deck-footer{margin-top:4rem;padding:2rem 0 0;border-top:1px solid var(--border);text-align:center;color:var(--slate-500);font-size:.85rem;}
+
+/* ---------- TOC ---------- */
+.toc{position:fixed;top:1rem;right:1rem;background:rgba(13,15,21,.92);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:8px;padding:.65rem .9rem;font-size:.78rem;max-width:240px;z-index:10;display:none;}
+.toc a{display:block;color:var(--slate-300);margin:.2rem 0;}
+.toc a.active{color:var(--indigo-300);font-weight:600;}
+@media(min-width:1280px){.toc{display:block;}}
+
+/* ---------- PRINT (for "save as PDF") ---------- */
+@media print{
+  body{background:#fff;color:#000;}
+  .toc{display:none;}
+  .section{break-inside:avoid;padding:1rem 0;}
+}
+</style>
+</head>
+<body>
+<header class="hero"><div class="wrap inner">
+  <div class="author-line">Palani Munusamy</div>
+  <div class="kicker">Executive Briefing · 5 Minutes</div>
+  <h1>ClickHouse</h1>
+  <p class="lede">The columnar OLAP engine reshaping real-time analytics.</p>
+  
+</div></header>
+<main><section class="section"><div class="wrap">
+    <div class="tag indigo">Overview</div>
+    <h2>Executive Summary</h2>
+    <div class="section-rule"></div>
+    
+    
+      <p style="font-size:1.05rem;color:var(--slate-200);max-width:60rem;">
+        ClickHouse is an open-source <strong style="color:var(--indigo-300);">column-oriented OLAP database</strong>
+        engineered for sub-second analytical queries over very large datasets —
+        typically <strong style="color:var(--success);">10–1000× faster</strong>
+        than traditional row-stores on aggregation workloads.
+      </p>
+      <div class="cards cols-3">
+        <div class="card stat-card tag-cyan"><div class="big">10–100×</div><div class="lbl">compression vs raw data</div></div>
+        <div class="card stat-card tag-green"><div class="big">1B+ rows/sec</div><div class="lbl">single-node scan throughput</div></div>
+        <div class="card stat-card tag-pink"><div class="big">PB-scale</div><div class="lbl">production deployments</div></div>
+      </div>
+      <div class="callout teal"><strong>BOTTOM LINE  ·</strong>  Adopt ClickHouse for high-throughput analytical workloads — not as a transactional or general-purpose database.</div>
+    
+  </div></section><section class="section"><div class="wrap">
+    <div class="tag improve">Market context</div>
+    <h2>Why The Industry Adopted ClickHouse</h2>
+    <div class="section-rule"></div>
+    
+    
+      <div class="cards cols-2">
+        <div class="card tag-cyan"><div class="ctag">01</div><h3>Cost compression at scale</h3><p>Heavy columnar compression + commodity hardware delivers 5–20× lower TCO than data-warehouse alternatives for log/event workloads.</p></div>
+        <div class="card tag-indigo"><div class="ctag">02</div><h3>Real-time analytics on operational data</h3><p>Sub-second response over recent + historical data without ETL latency — observability, security, product analytics all converge here.</p></div>
+        <div class="card tag-green"><div class="ctag">03</div><h3>Linear scale-out + open source</h3><p>Shards and replicas scale horizontally on Kubernetes or VMs. Apache 2.0 license — no lock-in, mature ClickHouse Cloud option.</p></div>
+        <div class="card tag-pink"><div class="ctag">04</div><h3>Adopted by hyperscalers</h3><p>Cloudflare, Uber, Lyft, eBay, Tesla, ByteDance, Spotify, GitHub — ClickHouse powers observability and analytics at multi-PB scale.</p></div>
+      </div>
+    
+  </div></section><section class="section"><div class="wrap">
+    <div class="tag act">Fit assessment</div>
+    <h2>When To Use — And When Not To</h2>
+    <div class="section-rule"></div>
+    
+    
+      <div class="cards cols-2">
+        <div class="card tag-success"><h3>USE CLICKHOUSE WHEN</h3><ul><li>Analytical aggregations over wide tables</li><li>Time-series, logs, events, telemetry</li><li>Append-mostly ingestion at high volume</li><li>Dashboards needing sub-second latency</li><li>Datasets too large/expensive for OLTP</li><li>Real-time observability &amp; SIEM workloads</li></ul></div>
+        <div class="card tag-error"><h3>AVOID CLICKHOUSE WHEN</h3><ul><li>OLTP — many small row-level updates</li><li>Strict ACID multi-row transactions</li><li>Heavy joins over large dimensional data</li><li>Frequent point-lookup or upsert traffic</li><li>&lt;100M rows where Postgres suffices</li><li>Unique-constraint enforcement is critical</li></ul></div>
+      </div>
+    
+  </div></section><section class="section"><div class="wrap">
+    <div class="tag diagnose">Market map</div>
+    <h2>Competitive Position At A Glance</h2>
+    <div class="section-rule"></div>
+    
+    <div style="overflow-x:auto;"><table class="matrix"><thead><tr><th>Engine</th><th>Sweet spot</th><th>Where ClickHouse wins</th></tr></thead><tbody><tr><td class="name">Postgres / MySQL</td><td class="center">OLTP, transactional apps</td><td class="center">100–1000× faster on analytical scans over large data</td></tr><tr><td class="name">Snowflake / BigQuery</td><td class="center">Managed cloud DW, BI workloads</td><td class="center">Far lower $/TB scanned; real-time ingest; self-host option</td></tr><tr><td class="name">Druid / Pinot</td><td class="center">Real-time OLAP, dashboards</td><td class="center">Simpler ops, SQL-native, broader query coverage</td></tr><tr><td class="name">Elasticsearch</td><td class="center">Search + log analytics</td><td class="center">Far cheaper storage, faster aggregations on logs</td></tr><tr><td class="name">Databricks</td><td class="center">Lakehouse + ML pipelines</td><td class="center">Lower-latency serving for analytics-on-recent-data</td></tr></tbody></table></div><p style="color:var(--slate-500);font-size:.85rem;font-style:italic;margin-top:.5rem;">Detailed feature matrices appear in the engineering and workshop decks.</p>
+  </div></section><section class="section"><div class="wrap">
+    <div class="tag prevent">Positioning</div>
+    <h2>RFP Posture &amp; Operational Readiness</h2>
+    <div class="section-rule"></div>
+    
+    
+      <div class="cards cols-2">
+        <div class="card tag-success"><h3>STRENGTHS TO LEAD WITH</h3><ul><li>Cost-to-performance ratio</li><li>Open source — no licensing or vendor lock-in</li><li>Real-time ingest with sub-second query latency</li><li>Linear horizontal scaling on commodity infrastructure</li></ul></div>
+        <div class="card tag-warning"><h3>RISKS TO ACKNOWLEDGE</h3><ul><li>Operational expertise is non-trivial — invest in SRE skills</li><li>Schema design heavily shapes performance</li><li>Limited transactional guarantees; updates are expensive</li><li>JOIN ergonomics weaker than purpose-built DWs</li></ul></div>
+      </div>
+      <div class="callout indigo"><strong>RECOMMENDATION FOR SRE / PLATFORM TEAMS  ·</strong>  
+        Treat ClickHouse as a <strong style="color:var(--indigo-300);">first-class platform service</strong>:
+        dedicated capacity plan, observability via system tables, defined HA/DR runbooks, RBAC integration, and a clear ingest contract.
+        Pilot one observability or product-analytics workload before committing to broader migration.
+        <strong style="color:var(--indigo-300);">Use ClickHouse Cloud</strong> for initial deployment unless data-residency or cost at scale dictates self-managed Kubernetes operator.
+      </div>
+    
+  </div></section><section class="section"><div class="wrap">
+    <div class="tag teal">Close · next steps</div>
+    <h2>Adopt Deliberately</h2>
+    <div class="section-rule"></div>
+    <p class="lede">Right workload. Right architecture. Right operational posture.</p>
+    
+      <div class="cards cols-3">
+        <div class="card tag-indigo"><div class="num">01</div><h3>Identify pilot workload</h3><p>Pick one observability, security, or product-analytics use case with clear SLOs and append-mostly ingest.</p></div>
+        <div class="card tag-indigo"><div class="num">02</div><h3>Run a 30-day spike</h3><p>Stand up ClickHouse Cloud, model the schema, replay one week of real traffic, capture query and cost telemetry.</p></div>
+        <div class="card tag-indigo"><div class="num">03</div><h3>Decide and scale</h3><p>Compare against the engineering and workshop decks for full ops + cost picture, then go/no-go with a written ADR.</p></div>
+      </div>
+    
+  </div></section></main>
+<footer class="deck-footer wrap">
+  Prepared by <strong style='color:var(--indigo-400);'>Palani Munusamy</strong><br/>
+  <span style="color:var(--slate-500);">ClickHouse Technical Enablement Series · May 2026</span>
+</footer>
+</body></html>
